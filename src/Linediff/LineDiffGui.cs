@@ -92,7 +92,7 @@ namespace Linediff
                 ImGui.SetNextWindowSize(new Vector2(_window.Width, _window.Height));
                 ImGui.Begin("", ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration);
 
-                ImGui.BeginChild("Diff");
+                ImGui.BeginChild("Diff", new Vector2(0,0), false, ImGuiWindowFlags.HorizontalScrollbar);
 
                 RenderWithPaging();
 
@@ -117,6 +117,8 @@ namespace Linediff
         {
             return ImGui.IsKeyPressed(key.GetIndex());
         }
+
+        static Vector2 GetScrollPos() => new Vector2(ImGui.GetScrollX(), ImGui.GetScrollY());
 
         static void RenderWithPaging()
         {
@@ -152,7 +154,7 @@ namespace Linediff
                 // TODO: handle Ctrl+Home/Ctrl+End for jumping to start/end. Will need to look at how to get this from Veldrid directly, as it doesn't look like Dear ImGui supports this.
             }
 
-            GuiDiffFormatter formatter = new GuiDiffFormatter(lastScrollY, lineHeight);
+            GuiDiffFormatter formatter = new GuiDiffFormatter(GetScrollPos(), lineHeight);
 
             // calculate first element
             int firstElement = (int)Math.Floor(Math.Max(0, lastScrollY - ImGui.GetWindowSize().Y) / lineHeight);
