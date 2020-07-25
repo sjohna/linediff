@@ -20,7 +20,7 @@ namespace Linediff
 
         public void FormatDiff(Diff diff)
         {
-            float totalWidth = 0.0f;
+            float totalWidth = ImGui.GetCursorPosX();
 
             for (int i = 0; i < diff.Blocks.Count; ++i)
             {
@@ -61,7 +61,7 @@ namespace Linediff
 
         private float Render(AddedTextBlock block)
         {
-            var rectPos = ImGui.GetCursorPos() + ImGui.GetWindowPos() - new Vector2(0, lastScrollY) - ImGui.GetStyle().ItemSpacing / 2.0f;
+            var rectPos = ImGui.GetCursorPos() + ImGui.GetWindowPos() - new Vector2(0, lastScrollY);// - ImGui.GetStyle().ItemSpacing / 2.0f;
             var textWidth = ImGui.CalcTextSize(block.Text).X;
 
             ImGui.GetWindowDrawList().AddRectFilled(rectPos, rectPos + new Vector2(textWidth, lineHeight), (uint)Color.Green.ToArgb());
@@ -73,7 +73,7 @@ namespace Linediff
 
         private float Render(RemovedTextBlock block)
         {
-            var rectPos = ImGui.GetCursorPos() + ImGui.GetWindowPos() - new Vector2(0, lastScrollY) - ImGui.GetStyle().ItemSpacing / 2.0f;
+            var rectPos = ImGui.GetCursorPos() + ImGui.GetWindowPos() - new Vector2(0, lastScrollY);// - ImGui.GetStyle().ItemSpacing / 2.0f;
             var textWidth = ImGui.CalcTextSize(block.Text).X;
 
             ImGui.GetWindowDrawList().AddRectFilled(rectPos, rectPos + new Vector2(textWidth, lineHeight), (uint)Color.Red.ToArgb());

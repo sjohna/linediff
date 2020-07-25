@@ -118,9 +118,16 @@ namespace Linediff
 
             int elementOffset = 0;
 
+            int LineNumberWidth = (diffs.Count + 1).ToString().Length;
+
             while (firstElementStart + elementOffset * lineHeight - lastScrollY < ImGui.GetWindowSize().Y * 2 && firstElement + elementOffset < totalElements)
             {
                 int i = firstElement + elementOffset;
+
+                ImGui.PushStyleColor(ImGuiCol.Text, (uint)Color.DarkGray.ToArgb());
+                ImGui.Text((i + 1).ToString().PadLeft(LineNumberWidth));
+                ImGui.SameLine();
+                ImGui.PopStyleColor(1);
 
                 formatter.FormatDiff(diffs[i]);
 
