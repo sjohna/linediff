@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Veldrid;
 using Veldrid.Sdl2;
@@ -95,18 +96,62 @@ namespace Linediff
 
                 RenderWithPaging();
 
+                Console.WriteLine($"{ImGui.GetScrollY()}/{ImGui.GetScrollMaxY()}");
+
                 ImGui.End();
 
                 ImGui.End();
             }
         }
 
-        static float lastScrollY;
+        static float maxScrollY = -1;
+
+        static bool CanKeyboardNavigate => maxScrollY >= 0.0f;
+
+        static int GetIndex(this ImGuiKey key)
+        {
+            return ImGui.GetKeyIndex(key);
+        }
+
+        static bool IsPressed(this ImGuiKey key)
+        {
+            return ImGui.IsKeyPressed(key.GetIndex());
+        }
 
         static void RenderWithPaging()
         {
             float lineHeight = ImGui.CalcTextSize("1").Y + ImGui.GetStyle().ItemSpacing.Y;
+            float pageHeight = ImGui.GetWindowSize().Y;
             int totalElements = diffs.Count;
+
+            float lastScrollY = ImGui.GetScrollY();
+
+            // keyboard navigation
+            if (CanKeyboardNavigate)
+            {
+                if (ImGuiKey.DownArrow.IsPressed())
+                {
+                    lastScrollY = Math.Min(maxScrollY, lastScrollY + lineHeight);
+                    ImGui.SetScrollY(lastScrollY);
+                }
+                else if (ImGuiKey.UpArrow.IsPressed())
+                {
+                    lastScrollY = Math.Max(0, lastScrollY - lineHeight);
+                    ImGui.SetScrollY(lastScrollY);
+                }
+                else if (ImGuiKey.PageDown.IsPressed())
+                {
+                    lastScrollY = Math.Min(maxScrollY, lastScrollY + pageHeight);
+                    ImGui.SetScrollY(lastScrollY);
+                }
+                else if (ImGuiKey.PageUp.IsPressed())
+                {
+                    lastScrollY = Math.Max(0, lastScrollY - pageHeight);
+                    ImGui.SetScrollY(lastScrollY);
+                }
+                // TODO: handle Ctrl+Home/Ctrl+End for jumping to start/end. Will need to look at how to get this from Veldrid directly, as it doesn't look like Dear ImGui supports this.
+            }
+
             GuiDiffFormatter formatter = new GuiDiffFormatter(lastScrollY, lineHeight);
 
             // calculate first element
@@ -136,7 +181,7 @@ namespace Linediff
 
             ImGui.SetCursorPosY(totalElements * lineHeight);
 
-            lastScrollY = ImGui.GetScrollY();
+            maxScrollY = ImGui.GetScrollMaxY();
         }
     }
 }
