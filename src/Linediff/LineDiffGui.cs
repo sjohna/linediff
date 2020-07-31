@@ -90,21 +90,58 @@ namespace Linediff
 
                 ImGui.SetNextWindowPos(new Vector2(0, 0));
                 ImGui.SetNextWindowSize(new Vector2(_window.Width, _window.Height));
+
+                float statusBarHeight = ImGui.CalcTextSize("1").Y + ImGui.GetStyle().ItemSpacing.Y * 2;
+
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0.0f));
+                ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(0.0f));
+                ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(0.0f));
+
                 ImGui.Begin("", ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration);
 
-                ImGui.BeginChild("Diff", new Vector2(0,0), false, ImGuiWindowFlags.HorizontalScrollbar);
+                ImGui.BeginChild("Diff", new Vector2(0,-statusBarHeight), true, ImGuiWindowFlags.HorizontalScrollbar);
+
+                ImGui.PopStyleVar(3);
 
                 RenderWithPaging();
 
                 Console.WriteLine($"{ImGui.GetScrollY()}/{ImGui.GetScrollMaxY()}");
+                float scrollAreaHeight = ImGui.GetWindowHeight();
 
                 ImGui.End();
+
+
+                // status bar
+                var statusBarRectPos = new Vector2(0, scrollAreaHeight);
+                ImGui.GetWindowDrawList().AddRectFilled(statusBarRectPos, statusBarRectPos + new Vector2(ImGui.GetWindowWidth(), scrollAreaHeight), (uint)Color.LightGray.ToArgb());
+
+                ImGui.PushStyleColor(ImGuiCol.Text, (uint)Color.Black.ToArgb());
+
+                ImGui.SetCursorPosX(ImGui.GetStyle().ItemSpacing.X);
+                ImGui.SetCursorPosY(statusBarRectPos.Y + ImGui.GetStyle().ItemSpacing.Y);
+                ImGui.Text($"lines: {diffs.Count}");
+
+                if (currentLine != -1)
+                {
+                    ImGui.SameLine();
+                    ImGui.Text($"| line {currentLine}");
+                }
+
+                if (currentColumn != -1)
+                {
+                    ImGui.SameLine();
+                    ImGui.Text($"| col {currentColumn}");
+                }
+
+                ImGui.PopStyleColor(1);
 
                 ImGui.End();
             }
         }
 
         static float maxScrollY = -1;
+        static int currentLine = -1;
+        static int currentColumn = -1;
 
         static bool CanKeyboardNavigate => maxScrollY >= 0.0f;
 
@@ -123,6 +160,7 @@ namespace Linediff
         static void RenderWithPaging()
         {
             float lineHeight = ImGui.CalcTextSize("1").Y + ImGui.GetStyle().ItemSpacing.Y;
+            float charWidth = ImGui.CalcTextSize(" ").X;
             float pageHeight = ImGui.GetWindowSize().Y;
             int totalElements = diffs.Count;
 
@@ -165,14 +203,16 @@ namespace Linediff
 
             int elementOffset = 0;
 
-            int LineNumberWidth = (diffs.Count + 1).ToString().Length;
+            int lineNumberCharWidth = (diffs.Count + 1).ToString().Length;
+
+            float lineNumberFieldWidth = ImGui.CalcTextSize(new string(' ', lineNumberCharWidth)).X + ImGui.GetStyle().ItemSpacing.X;
 
             while (firstElementStart + elementOffset * lineHeight - lastScrollY < ImGui.GetWindowSize().Y * 2 && firstElement + elementOffset < totalElements)
             {
                 int i = firstElement + elementOffset;
 
                 ImGui.PushStyleColor(ImGuiCol.Text, (uint)Color.DarkGray.ToArgb());
-                ImGui.Text((i + 1).ToString().PadLeft(LineNumberWidth));
+                ImGui.Text((i + 1).ToString().PadLeft(lineNumberCharWidth));
                 ImGui.SameLine();
                 ImGui.PopStyleColor(1);
 
@@ -184,6 +224,33 @@ namespace Linediff
             ImGui.SetCursorPosY(totalElements * lineHeight);
 
             maxScrollY = ImGui.GetScrollMaxY();
+
+            // get mouse cursor pos and set current line and current column
+
+            var mouseWindowPos = ImGui.GetMousePos();
+            
+            if (mouseWindowPos.Y > ImGui.GetWindowHeight())
+            {
+                currentLine = -1;
+            }
+            else
+            {
+                var posWithinScrollWindow = mouseWindowPos - ImGui.GetWindowPos() + GetScrollPos() + new Vector2(0, ImGui.GetStyle().ItemSpacing.Y / 2.0f);
+
+                currentLine = (int)(posWithinScrollWindow.Y / lineHeight) + 1;
+
+                float lineMinX = lineNumberFieldWidth;
+                float lineMaxX = lineMinX + ImGui.CalcTextSize(diffs[currentLine].FullText).X;
+
+                if (posWithinScrollWindow.X >= lineMinX && posWithinScrollWindow.X <= lineMaxX)
+                {
+                    currentColumn = (int)((posWithinScrollWindow.X - lineMinX) / charWidth) + 1;
+                }
+                else
+                {
+                    currentColumn = -1;
+                }
+            }
         }
     }
 }

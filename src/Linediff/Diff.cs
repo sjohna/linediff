@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 
 namespace Linediff
@@ -9,11 +10,16 @@ namespace Linediff
     {
         public ImmutableList<TextBlock> Blocks { get; private set; }
 
+        public int LineLength { get; private set;}
+
+        public string FullText => string.Join("", Blocks.Select(b => b.Text));
+
         public Diff(string line)
         {
             var blocksBuilder = ImmutableList.CreateBuilder<TextBlock>();
             blocksBuilder.Add(new UnchangedTextBlock(line));
             Blocks = blocksBuilder.ToImmutable();
+            LineLength = Blocks.Select(block => block.Text.Length).Sum();
         }
 
         public Diff(string lineDiffFrom, string lineDiffTo)
@@ -37,6 +43,7 @@ namespace Linediff
             }
 
             Blocks = blocksBuilder.ToImmutable();
+            LineLength = Blocks.Select(block => block.Text.Length).Sum();
         }
 
         private TextBlock CreateBlock(string lineDiffFrom, string lineDiffTo, ref int startIndex)
